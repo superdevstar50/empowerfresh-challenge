@@ -1,42 +1,75 @@
-# sv
+# Grocery Data Processing (Empowerfresh UI)
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit app for uploading, processing, and exploring grocery CSV data. ETL pipelines normalize and load data into PostgreSQL; you can filter and view products, prices, and sales by customer and store.
 
-## Creating a project
+## Prerequisites
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Node.js** 18+
+- **Docker** (optional, for running PostgreSQL via Docker Compose)
 
-```sh
-# create a new project
-npx sv create my-app
+## Quick start
+
+### 1. Install dependencies
+
+```bash
+npm install
 ```
 
-To recreate this project with the same configuration:
+### 2. Database
 
-```sh
-# recreate this project
-npx sv create --template minimal --types ts --install npm empowerfresh-ui
+**Option A: Docker (recommended)**
+
+```bash
+docker compose up -d
 ```
 
-## Developing
+Postgres runs on port **5433** with database `grocery_etl`, user `postgres`, password `postgres`.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+**Option B:** Use an existing PostgreSQL instance and note its connection URL.
 
-```sh
+### 3. Environment
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/grocery_etl"
+```
+
+Adjust the URL if your host, port, user, or database differ.
+
+### 4. Migrate and seed (optional)
+
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
+
+The seed creates three customers: J&A Grocers, Colin's Market, Steven's Produce.
+
+### 5. Run the app
+
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Open the URL shown in the terminal (e.g. `http://localhost:5173`). Use **Import** to upload CSVs and run ETL, and **Explore** to view data. **Pipelines** shows current and past import jobs.
 
-To create a production version of your app:
+## Scripts
 
-```sh
-npm run build
-```
+| Command | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server (Vite). |
+| `npm run build` | Production build. |
+| `npm run preview` | Serve production build locally. |
+| `npx prisma migrate dev` | Apply migrations and regenerate Prisma Client. |
+| `npx prisma db seed` | Seed customers (and optionally stores). |
+| `npm run check` | Run `svelte-check` (types). |
 
-You can preview the production build with `npm run preview`.
+## Project layout
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- **`src/routes/`** — SvelteKit pages and API routes.
+- **`src/features/`** — Feature UI (explore, import, pipelines).
+- **`src/components/`** — Shared UI components.
+- **`src/lib/etl/`** — ETL: preprocess, column mapping, detection, pipeline, job store, processJob.
+- **`src/lib/db/`** — Prisma client.
+- **`prisma/`** — Schema, migrations, seed.

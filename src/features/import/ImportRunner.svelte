@@ -1,14 +1,13 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import toast from 'svelte-french-toast';
-	import ImportResults from './ImportResults.svelte';
-	import type { UploadedFile, ETLSummary } from '$lib/types';
+	import type { UploadedFile } from '$lib/types';
 
 	let { files = $bindable() }: {
 		files: UploadedFile[];
 	} = $props();
 
 	let importing = $state(false);
-	let importResults = $state<ETLSummary | null>(null);
 
 	let allHaveCustomer = $derived(files.length > 0 && files.every((f) => f.customerId));
 	let missingCount = $derived(files.filter((f) => !f.customerId).length);
@@ -16,7 +15,6 @@
 	async function runImport() {
 		if (!allHaveCustomer) return;
 		importing = true;
-		importResults = null;
 
 		try {
 			const res = await fetch('/api/etl', {
@@ -32,14 +30,10 @@
 				})
 			});
 			if (res.ok) {
-				importResults = await res.json();
+				const data = await res.json();
 				files = [];
-				const r = importResults!;
-				if (r.totalErrors > 0) {
-					toast.error(`Import completed with ${r.totalErrors} error${r.totalErrors !== 1 ? 's' : ''}.`);
-				} else {
-					toast.success(`Import completed: ${r.totalInserted} inserted, ${r.totalUpdated} updated.`);
-				}
+				toast.success('Import started. View progress on Pipelines.');
+				goto(`/import/jobs/${data.jobId}`);
 			} else {
 				const data = await res.json().catch(() => ({}));
 				toast.error(data.error ?? 'Import failed.');
@@ -58,7 +52,7 @@
 	disabled={!allHaveCustomer || importing}
 >
 	{#if importing}
-		Processing...
+		Starting…
 	{:else}
 		Import {files.length} File{files.length !== 1 ? 's' : ''}
 	{/if}
@@ -68,8 +62,4 @@
 	<p class="text-sm text-amber-600">
 		{missingCount} file{missingCount !== 1 ? 's' : ''} missing a customer assignment.
 	</p>
-{/if}
-
-{#if importResults}
-	<ImportResults results={importResults} />
 {/if}

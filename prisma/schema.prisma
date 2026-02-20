@@ -74,3 +74,13 @@ model Sale {
   @@index([storeId, upcPlu])
   @@map("sales")
 }
+
+model ImportJob {
+  id        String   @id
+  status    String   // pending | processing | completed | failed
+  files     Json     // JobFileStatus[]
+  summary   Json?    // ETLSummary when completed
+  createdAt DateTime @default(now())
+
+  @@map("import_jobs")
+}

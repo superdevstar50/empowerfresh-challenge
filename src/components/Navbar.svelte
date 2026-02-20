@@ -3,6 +3,7 @@
 
 	const links = [
 		{ href: '/import', label: 'Import' },
+		{ href: '/import/jobs', label: 'Pipelines' },
 		{ href: '/explore', label: 'Explore' }
 	];
 </script>
@@ -18,7 +19,7 @@
 					<a
 						href={link.href}
 						class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {
-							$page.url.pathname.startsWith(link.href)
+							(link.href === '/import' ? $page.url.pathname === '/import' : $page.url.pathname.startsWith(link.href))
 								? 'bg-emerald-50 text-emerald-600'
 								: 'text-gray-700 hover:bg-gray-100 hover:text-emerald-600'
 						}"

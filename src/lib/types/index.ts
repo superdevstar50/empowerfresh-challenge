@@ -27,6 +27,22 @@ export interface ETLFileResult extends ETLResult {
 	filename: string;
 }
 
+export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface JobFileStatus {
+	filename: string;
+	status: JobStatus;
+	result?: ETLFileResult;
+}
+
+export interface ETLJob {
+	id: string;
+	status: JobStatus;
+	files: JobFileStatus[];
+	summary?: ETLSummary;
+	createdAt: string; // ISO date from API
+}
+
 export interface ETLSummary {
 	totalInserted: number;
 	totalUpdated: number;

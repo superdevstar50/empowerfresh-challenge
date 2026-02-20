@@ -103,8 +103,8 @@ async function importProducts(rows: Row[], customerId: number): Promise<ETLResul
 				description: toTitleCase(row.description),
 				department: row.department?.toLowerCase() ?? null,
 				category: row.category?.toLowerCase() ?? null,
-				unitSize: row.unit_size,
-				packSize: row.pack_size,
+				unitSize: row.unit_size?.trim() ?? null,
+				packSize: row.pack_size?.trim() || null,
 				metadata: extractMetadata(row, PRODUCT_KEY_FIELDS)
 			};
 
@@ -180,7 +180,18 @@ async function importPrices(rows: Row[], customerId: number): Promise<ETLResult>
 		const storeId = storeMap.get(storeCode)!;
 		const upcPlu = row.upc_plu!.trim();
 		const priceType = row.price_type?.trim().toUpperCase() ?? null;
-		const startDate = row.start_date?.trim() ?? null;
+		const price = toFloat(row.price);
+		const startDate = normalizeTimestamp(row.start_date);
+		const endDate = normalizeTimestamp(row.end_date);
+
+		if (price === null) {
+			result.skipped++;
+			const msg = `Skipped price row (upc=${upcPlu}): invalid price "${row.price}"`;
+			result.messages.push(msg);
+			logger.warn('ETL:price', msg);
+			continue;
+		}
+
 		const dedupeKey = `${storeId}:${upcPlu}:${priceType}:${startDate}`;
 
 		if (seenKeys.has(dedupeKey) || existingKeys.has(dedupeKey)) {
@@ -192,10 +203,10 @@ async function importPrices(rows: Row[], customerId: number): Promise<ETLResult>
 		toCreate.push({
 			storeId,
 			upcPlu,
-			price: toFloat(row.price),
+			price,
 			priceType,
 			startDate,
-			endDate: row.end_date?.trim() ?? null,
+			endDate,
 			metadata: extractMetadata(row, PRICE_KEY_FIELDS)
 		});
 	}
@@ -255,7 +266,18 @@ async function importSales(rows: Row[], customerId: number): Promise<ETLResult> 
 		const storeId = storeMap.get(storeCode)!;
 		const upcPlu = row.upc_plu!.trim();
 		const saleTime = normalizeTimestamp(row.sale_time);
+		const unitPrice = toFloat(row.unit_price);
+		const unitsSold = toFloat(row.units_sold);
 		const totalSale = toFloat(row.total_sale);
+
+		if (unitPrice === null && unitsSold === null && totalSale === null) {
+			result.skipped++;
+			const msg = `Skipped sale row (upc=${upcPlu}): no valid numeric values`;
+			result.messages.push(msg);
+			logger.warn('ETL:sale', msg);
+			continue;
+		}
+
 		const dedupeKey = `${storeId}:${upcPlu}:${saleTime}:${totalSale}`;
 
 		if (seenKeys.has(dedupeKey) || existingKeys.has(dedupeKey)) {
@@ -270,8 +292,8 @@ async function importSales(rows: Row[], customerId: number): Promise<ETLResult> 
 			storeId,
 			upcPlu,
 			saleTime,
-			unitPrice: toFloat(row.unit_price),
-			unitsSold: toFloat(row.units_sold),
+			unitPrice,
+			unitsSold,
 			totalSale,
 			metadata: extractMetadata(row, SALE_KEY_FIELDS)
 		});

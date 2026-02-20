@@ -2,7 +2,7 @@
 	import toast from 'svelte-french-toast';
 	import DataTable from '$components/DataTable.svelte';
 	import Pagination from '$components/Pagination.svelte';
-	import { formatCurrency } from '$lib/utils/format';
+	import { formatCurrency, formatDate } from '$lib/utils/format';
 
 	interface PageInfo { total: number; page: number; limit: number; totalPages: number }
 
@@ -86,6 +86,8 @@
 				<span class="text-gray-900 font-medium">{formatCurrency(row.price)}</span>
 			{:else if column.key === 'priceType'}
 				<span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{row.priceType ?? '-'}</span>
+			{:else if column.key === 'startDate' || column.key === 'endDate'}
+				<span class="text-gray-600">{formatDate(row[column.key])}</span>
 			{:else if column.key === '_store'}
 				<span class="text-gray-600">{storeCode(row)}</span>
 			{:else if column.key === '_customer'}

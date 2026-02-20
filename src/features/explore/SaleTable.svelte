@@ -2,7 +2,7 @@
 	import toast from 'svelte-french-toast';
 	import DataTable from '$components/DataTable.svelte';
 	import Pagination from '$components/Pagination.svelte';
-	import { formatCurrency, formatNumber } from '$lib/utils/format';
+	import { formatCurrency, formatNumber, formatDateTime } from '$lib/utils/format';
 
 	interface PageInfo { total: number; page: number; limit: number; totalPages: number }
 
@@ -84,6 +84,8 @@
 				<span class="font-mono text-gray-700">{row.upcPlu}</span>
 			{:else if column.key === 'unitPrice' || column.key === 'totalSale'}
 				<span class="text-gray-900 {column.key === 'totalSale' ? 'font-medium' : ''}">{formatCurrency(row[column.key])}</span>
+			{:else if column.key === 'saleTime'}
+				<span class="text-gray-600">{formatDateTime(row.saleTime)}</span>
 			{:else if column.key === 'unitsSold'}
 				<span class="text-gray-600">{formatNumber(row.unitsSold)}</span>
 			{:else if column.key === '_store'}

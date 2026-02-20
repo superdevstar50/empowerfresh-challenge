@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  stores   Store[]
+  products Product[]
+
+  @@map("customers")
+}
+
+model Store {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  storeCode  String   @map("store_code")
+  name       String?
+  customer   Customer @relation(fields: [customerId], references: [id])
+  prices     Price[]
+  sales      Sale[]
+
+  @@unique([customerId, storeCode])
+  @@map("stores")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  customerId  Int      @map("customer_id")
+  upcPlu      String   @map("upc_plu")
+  description String?
+  department  String?
+  category    String?
+  unitSize    String?  @map("unit_size")
+  packSize    String?  @map("pack_size")
+  metadata    Json?    @default("{}")
+  customer    Customer @relation(fields: [customerId], references: [id])
+
+  @@unique([customerId, upcPlu])
+  @@map("products")
+}
+
+model Price {
+  id        Int     @id @default(autoincrement())
+  storeId   Int     @map("store_id")
+  upcPlu    String  @map("upc_plu")
+  price     Float?
+  priceType String? @map("price_type")
+  startDate String? @map("start_date")
+  endDate   String? @map("end_date")
+  metadata  Json?   @default("{}")
+  store     Store   @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, upcPlu])
+  @@map("prices")
+}
+
+model Sale {
+  id        Int     @id @default(autoincrement())
+  storeId   Int     @map("store_id")
+  upcPlu    String  @map("upc_plu")
+  saleTime  String? @map("sale_time")
+  unitPrice Float?  @map("unit_price")
+  unitsSold Float?  @map("units_sold")
+  totalSale Float?  @map("total_sale")
+  metadata  Json?   @default("{}")
+  store     Store   @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, upcPlu])
+  @@map("sales")
+}

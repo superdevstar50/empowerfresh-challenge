@@ -3,16 +3,18 @@
 	import ImportResults from './ImportResults.svelte';
 	import type { UploadedFile, ETLSummary } from '$lib/types';
 
-	let { customerId, files = $bindable() }: {
-		customerId: number | null;
+	let { files = $bindable() }: {
 		files: UploadedFile[];
 	} = $props();
 
 	let importing = $state(false);
 	let importResults = $state<ETLSummary | null>(null);
 
+	let allHaveCustomer = $derived(files.length > 0 && files.every((f) => f.customerId));
+	let missingCount = $derived(files.filter((f) => !f.customerId).length);
+
 	async function runImport() {
-		if (!customerId || files.length === 0) return;
+		if (!allHaveCustomer) return;
 		importing = true;
 		importResults = null;
 
@@ -21,10 +23,10 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					customerId,
 					files: files.map((f) => ({
 						path: f.path,
 						filename: f.filename,
+						customerId: f.customerId,
 						typeOverride: f.typeOverride !== f.detectedType ? f.typeOverride : undefined
 					}))
 				})
@@ -53,7 +55,7 @@
 <button
 	class="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 	onclick={runImport}
-	disabled={!customerId || files.length === 0 || importing}
+	disabled={!allHaveCustomer || importing}
 >
 	{#if importing}
 		Processing...
@@ -62,8 +64,10 @@
 	{/if}
 </button>
 
-{#if !customerId && files.length > 0}
-	<p class="text-sm text-amber-600">Please select or create a customer before importing.</p>
+{#if files.length > 0 && !allHaveCustomer}
+	<p class="text-sm text-amber-600">
+		{missingCount} file{missingCount !== 1 ? 's' : ''} missing a customer assignment.
+	</p>
 {/if}
 
 {#if importResults}

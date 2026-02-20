@@ -38,13 +38,13 @@ export interface ETLSummary {
 }
 
 export interface ETLRequest {
-	customerId: number;
 	files: ETLFileInput[];
 }
 
 export interface ETLFileInput {
 	path: string;
 	filename: string;
+	customerId: number;
 	typeOverride?: FileType;
 }
 
@@ -54,6 +54,7 @@ export interface UploadedFile {
 	detectedType: FileType;
 	size: number;
 	typeOverride?: FileType;
+	customerId?: number | null;
 }
 
 export interface Customer {

@@ -11,22 +11,29 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body: ETLRequest = await request.json();
 
-		if (!body.customerId || !body.files?.length) {
-			return json({ error: 'customerId and files are required' }, { status: 400 });
+		if (!body.files?.length) {
+			return json({ error: 'files are required' }, { status: 400 });
+		}
+
+		const missingCustomer = body.files.filter((f) => !f.customerId);
+		if (missingCustomer.length > 0) {
+			return json({
+				error: `Missing customerId for: ${missingCustomer.map((f) => f.filename).join(', ')}`
+			}, { status: 400 });
 		}
 
 		const results: ETLFileResult[] = [];
 
-		logger.info('ETL:route', `Starting ETL for ${body.files.length} file(s), customerId=${body.customerId}`);
+		logger.info('ETL:route', `Starting ETL for ${body.files.length} file(s)`);
 
 	for (const file of body.files) {
 		try {
-			logger.info('ETL:route', `Processing "${file.filename}"...`);
+			logger.info('ETL:route', `Processing "${file.filename}" (customerId=${file.customerId})...`);
 			const content = await readFile(file.path, 'utf-8');
 			const preprocessed = preprocess(content);
 			const fileType = file.typeOverride ?? detectFileType(preprocessed.headers).fileType;
 			logger.info('ETL:route', `Detected type="${fileType}" for "${file.filename}" (${preprocessed.rows.length} rows)`);
-			const result = await runPipeline(preprocessed, fileType, body.customerId);
+			const result = await runPipeline(preprocessed, fileType, file.customerId);
 			results.push({ ...result, filename: file.filename });
 		} catch (e) {
 			const msg = `Failed to process "${file.filename}": ${(e as Error).message}`;
